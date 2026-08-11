@@ -43,7 +43,7 @@
                     return;
                 }
                 if (!window.Capacitor) {
-                    // Navegador, seguimos de inmediato
+                    // Navegador, seguimos sin espera
                     callback();
                     return;
                 }
@@ -53,9 +53,9 @@
                     if (window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) {
                         clearInterval(id);
                         callback();
-                    } else if (++intentos > 15) {
+                    } else if (++intentos > 20) {
                         clearInterval(id);
-                        callback(); // llamamos igual, luego se mostrará error si falta
+                        callback(); // llamamos igual, luego manejaremos el error
                     }
                 }, 200);
             }
@@ -123,14 +123,14 @@
 
                     // Obtener plugin Filesystem (puede ser null en navegador)
                     const Filesystem = window.Capacitor?.Plugins?.Filesystem;
+
                     if (Filesystem) {
-                        // ¡CORREGIDO! Directory está dentro de Filesystem
-                        const Directory = Filesystem.Directory;
+                        // ⚠️ ¡CORRECCIÓN! Usamos directamente el string 'DOCUMENTS' en vez del enum Directory
                         try {
                             const result = await Filesystem.writeFile({
                                 path: nuevoNombre,
                                 data: base64,
-                                directory: Directory.Documents,
+                                directory: 'DOCUMENTS',  // antes: Directory.Documents
                                 recursive: true
                             });
                             savedFilePath = result.uri;
@@ -140,10 +140,10 @@
                             statusDiv.textContent = '❌ Error al guardar: ' + err.message;
                         }
                     } else if (window.Capacitor) {
-                        // Estamos en Capacitor pero el plugin no cargó
+                        // Capacitor existe pero el plugin no cargó
                         statusDiv.textContent = '❌ Plugin de archivos no disponible. Revisá la instalación.';
                     } else {
-                        // Navegador: descargar
+                        // Navegador: descargar con enlace
                         const blob = new Blob([buffer], { type: currentFile.type });
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a');
@@ -181,7 +181,7 @@
                     return btoa(binary);
                 }
 
-                // Mensaje de estado inicial
+                // Estado inicial
                 if (window.Capacitor) {
                     statusDiv.textContent = '📱 App lista';
                 } else {

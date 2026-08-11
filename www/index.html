@@ -15,6 +15,7 @@
         .btn:active { background: #ffa726; }
         .date-input { background: #1e1e1e; border: 2px solid #333; border-radius: 12px; padding: 14px; color: #fff; font-size: 1rem; width: 100%; }
         #status { font-size: 0.85rem; color: #aaa; text-align: center; min-height: 20px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -29,6 +30,7 @@
         <label style="font-weight:bold;">📆 Fecha</label>
         <input type="date" id="datePicker" class="date-input">
         <button class="btn" id="saveBtn">💾 Guardar</button>
+        <button class="btn hidden" id="shareBtn">📤 Compartir</button>
         <div id="status"></div>
     </div>
     <script>
@@ -39,16 +41,23 @@
             const placeholder = document.getElementById('placeholder');
             const datePicker = document.getElementById('datePicker');
             const saveBtn = document.getElementById('saveBtn');
+            const shareBtn = document.getElementById('shareBtn');
             const statusDiv = document.getElementById('status');
+
             let currentFile = null;
+            let savedFilePath = null; // ruta del archivo guardado en Capacitor
+
             const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
             const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
             const hoy = new Date();
             datePicker.value = hoy.toISOString().split('T')[0];
+
             uploadBtn.addEventListener('click', () => fileInput.click());
             fileInput.addEventListener('change', (e) => {
                 if (e.target.files.length) procesarArchivo(e.target.files[0]);
             });
+
             function procesarArchivo(file) {
                 if (!file.type.startsWith('image/')) { alert('Seleccioná una imagen.'); return; }
                 currentFile = file;
@@ -60,9 +69,11 @@
                 };
                 reader.readAsDataURL(file);
             }
+
             saveBtn.addEventListener('click', async () => {
                 if (!currentFile) { statusDiv.textContent = '⚠️ Primero seleccioná una imagen.'; return; }
                 if (!datePicker.value) { statusDiv.textContent = '⚠️ Seleccioná una fecha.'; return; }
+
                 const [year, month, day] = datePicker.value.split('-');
                 const fecha = new Date(+year, +month - 1, +day);
                 const nombreDia = diasSemana[fecha.getDay()];
@@ -70,29 +81,68 @@
                 const diaStr = String(fecha.getDate()).padStart(2, '0');
                 const ext = currentFile.name.split('.').pop().toLowerCase() || 'jpg';
                 const nuevoNombre = `${nombreDia} ${diaStr} ${nombreMes} ${year}.${ext}`;
+
                 statusDiv.textContent = '⏳ Guardando...';
                 const buffer = await currentFile.arrayBuffer();
                 const base64 = arrayBufferToBase64(buffer);
+
                 if (window.Capacitor?.Plugins?.Filesystem) {
                     try {
                         const { Filesystem, Directory } = window.Capacitor.Plugins;
-                        await Filesystem.writeFile({ path: nuevoNombre, data: base64, directory: Directory.Documents, recursive: true });
+                        const result = await Filesystem.writeFile({
+                            path: nuevoNombre,
+                            data: base64,
+                            directory: Directory.Documents,
+                            recursive: true
+                        });
+                        // result.uri contiene la ruta completa
+                        savedFilePath = result.uri;
                         statusDiv.textContent = `✅ Guardado: "${nuevoNombre}"`;
-                    } catch (err) { statusDiv.textContent = '❌ Error: ' + err.message; }
+                        shareBtn.classList.remove('hidden');
+                    } catch (err) {
+                        statusDiv.textContent = '❌ Error al guardar: ' + err.message;
+                    }
                 } else {
+                    // Fallback navegador: descarga directa
                     const blob = new Blob([buffer], { type: currentFile.type });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url; a.download = nuevoNombre; a.click();
+                    a.href = url;
+                    a.download = nuevoNombre;
+                    a.click();
                     URL.revokeObjectURL(url);
                     statusDiv.textContent = `⬇️ Descargado: "${nuevoNombre}"`;
                 }
             });
+
+            shareBtn.addEventListener('click', async () => {
+                if (!savedFilePath) return;
+                if (window.Capacitor?.Plugins?.Share) {
+                    const { Share } = window.Capacitor.Plugins;
+                    try {
+                        await Share.share({
+                            title: 'Compartir imagen',
+                            text: 'Mirá esta imagen guardada con Fotofecha',
+                            url: savedFilePath,
+                            dialogTitle: 'Compartir con'
+                        });
+                    } catch (err) {
+                        statusDiv.textContent = '⚠️ Compartir cancelado o error.';
+                    }
+                }
+            });
+
             function arrayBufferToBase64(buffer) {
                 let binary = '';
                 const bytes = new Uint8Array(buffer);
                 for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
                 return btoa(binary);
+            }
+
+            if (window.Capacitor) {
+                statusDiv.textContent = '📱 Modo app';
+            } else {
+                statusDiv.textContent = '🌐 Navegador';
             }
         })();
     </script>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Wiki interactivo — FotoFecha</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <h1>Wiki interactivo — FotoFecha</h1>
+    <p>Edite HTML a la izquierda y vea la previsualización a la derecha. Útil para probar snippets del proyecto.</p>
+  </header>
+
+  <main class="container">
+    <section class="editor">
+      <div class="controls">
+        <select id="examples" aria-label="Ejemplos">
+          <option value="sample1">Ejemplo: Mostrar fecha sobre imagen</option>
+          <option value="sample2">Ejemplo: Formulario de subida (simulado)</option>
+          <option value="sample3">Ejemplo: Galería responsiva</option>
+        </select>
+        <button id="load">Cargar</button>
+        <button id="run">Previsualizar</button>
+        <button id="reset">Reiniciar</button>
+      </div>
+
+      <textarea id="editor" spellcheck="false"></textarea>
+    </section>
+
+    <section class="preview">
+      <div class="preview-header">Previsualización</div>
+      <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+    </section>
+  </main>
+
+  <footer>
+    <p>Repositorio: <strong>pytngdfv1-ai/fotofecha</strong> — Wiki interactivo generado automáticamente.</p>
+  </footer>
+
+  <script>
+    const samples = {
+      sample1: `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body{font-family: Arial, sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#111}
+    .card{position:relative;width:90%;max-width:640px;border-radius:8px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+    .card img{display:block;width:100%;height:auto}
+    .date{position:absolute;right:12px;bottom:12px;background:rgba(0,0,0,0.6);color:#fff;padding:8px 12px;border-radius:6px;font-weight:600}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="https://placehold.co/800x500?text=Foto+de+ejemplo" alt="Foto de ejemplo">
+    <div class="date">2026-08-11</div>
+  </div>
+</body>
+</html>`,
+
+      sample2: `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>body{font-family:Arial;margin:24px}form{display:flex;flex-direction:column;gap:8px;max-width:420px}input,button{padding:8px;font-size:16px}fieldset{border:1px solid #ddd;padding:12px;border-radius:6px}</style>
+</head>
+<body>
+  <h2>Subir foto (simulado)</h2>
+  <form id="uploadForm">
+    <fieldset>
+      <label>Seleccionar archivo:<br><input type="file" id="file"></label>
+      <label>Descripción:<br><input id="desc" placeholder="Descripción"></label>
+      <button type="button" onclick="simulate()">Subir</button>
+    </fieldset>
+  </form>
+  <div id="log" style="margin-top:12px;color:green"></div>
+
+  <script>
+    function simulate(){
+      const f = document.getElementById('file').files[0];
+      const d = document.getElementById('desc').value;
+      const log = document.getElementById('log');
+      if(!f){ log.textContent='Selecciona un archivo antes.'; return }
+      log.textContent = `Archivo "${f.name}" listo para subir. Descripción: ${d}`;
+    }
+  </script>
+</body>
+</html>`,
+
+      sample3: `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body{font-family:Arial;margin:16px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+    .item{background:#f5f5f5;border-radius:8px;overflow:hidden}
+    .item img{width:100%;height:120px;object-fit:cover;display:block}
+    .caption{padding:8px;font-size:14px}
+  </style>
+</head>
+<body>
+  <h3>Galería de ejemplo</h3>
+  <div class="grid">
+    <div class="item"><img src="https://placehold.co/400x300?text=1"><div class="caption">Foto 1 — 2026-08-11</div></div>
+    <div class="item"><img src="https://placehold.co/400x300?text=2"><div class="caption">Foto 2 — 2026-08-10</div></div>
+    <div class="item"><img src="https://placehold.co/400x300?text=3"><div class="caption">Foto 3 — 2026-08-09</div></div>
+  </div>
+</body>
+</html>`
+    }
+
+    const editor = document.getElementById('editor');
+    const iframe = document.getElementById('previewFrame');
+    const examples = document.getElementById('examples');
+
+    function loadSample(key){ editor.value = samples[key]; updatePreview(); }
+    function updatePreview(){ iframe.srcdoc = editor.value }
+    function resetEditor(){ loadSample('sample1') }
+
+    document.getElementById('load').addEventListener('click', ()=> loadSample(examples.value));
+    document.getElementById('run').addEventListener('click', updatePreview);
+    document.getElementById('reset').addEventListener('click', resetEditor);
+
+    // Live update while typing (debounced)
+    let timeout = null;
+    editor.addEventListener('input', ()=>{
+      clearTimeout(timeout);
+      timeout = setTimeout(updatePreview, 400);
+    });
+
+    // Inicializar
+    resetEditor();
+  </script>
+</body>
+</html>

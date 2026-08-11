@@ -1,0 +1,21 @@
+{
+  "name": "fotofecha",
+  "version": "1.0.0",
+  "description": "App minimalista para guardar fotos con nombre basado en la fecha",
+  "main": "www/index.html",
+  "scripts": {
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android",
+    "cap:assets": "npx capacitor-assets generate --iconBackgroundColor #121212 --iconBackgroundColorDark #121212"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/android": "^6.0.0",
+    "capacitor-assets": "^3.0.0"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/filesystem": "^6.0.0",
+    "@capacitor/share": "^6.0.0"
+  }
+}

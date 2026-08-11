@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Fotofecha</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #121212; color: #eee; font-family: system-ui, sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 16px; }
+        .preview-box { width: 100%; aspect-ratio: 1/1; background: #1e1e1e; border-radius: 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #333; }
+        .preview-box img { max-width: 100%; max-height: 100%; object-fit: contain; display: none; }
+        .preview-box .placeholder { color: #666; font-size: 1.2rem; }
+        .btn { background: #ffb74d; color: #000; border: none; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 1rem; cursor: pointer; width: 100%; text-align: center; }
+        .btn:active { background: #ffa726; }
+        .date-input { background: #1e1e1e; border: 2px solid #333; border-radius: 12px; padding: 14px; color: #fff; font-size: 1rem; width: 100%; }
+        #status { font-size: 0.85rem; color: #aaa; text-align: center; min-height: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-align:center; color:#ffb74d;">📅 Fotofecha</h1>
+        <div class="preview-box" id="previewBox">
+            <span class="placeholder" id="placeholder">Sin imagen</span>
+            <img id="preview" alt="Vista previa">
+        </div>
+        <input type="file" id="fileInput" accept="image/*" hidden>
+        <button class="btn" id="uploadBtn">📷 Seleccionar imagen</button>
+        <label style="font-weight:bold;">📆 Fecha</label>
+        <input type="date" id="datePicker" class="date-input">
+        <button class="btn" id="saveBtn">💾 Guardar</button>
+        <div id="status"></div>
+    </div>
+    <script>
+        (function() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const previewImg = document.getElementById('preview');
+            const placeholder = document.getElementById('placeholder');
+            const datePicker = document.getElementById('datePicker');
+            const saveBtn = document.getElementById('saveBtn');
+            const statusDiv = document.getElementById('status');
+            let currentFile = null;
+            const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+            const hoy = new Date();
+            datePicker.value = hoy.toISOString().split('T')[0];
+            uploadBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) procesarArchivo(e.target.files[0]);
+            });
+            function procesarArchivo(file) {
+                if (!file.type.startsWith('image/')) { alert('Seleccioná una imagen.'); return; }
+                currentFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    placeholder.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+            saveBtn.addEventListener('click', async () => {
+                if (!currentFile) { statusDiv.textContent = '⚠️ Primero seleccioná una imagen.'; return; }
+                if (!datePicker.value) { statusDiv.textContent = '⚠️ Seleccioná una fecha.'; return; }
+                const [year, month, day] = datePicker.value.split('-');
+                const fecha = new Date(+year, +month - 1, +day);
+                const nombreDia = diasSemana[fecha.getDay()];
+                const nombreMes = meses[fecha.getMonth()];
+                const diaStr = String(fecha.getDate()).padStart(2, '0');
+                const ext = currentFile.name.split('.').pop().toLowerCase() || 'jpg';
+                const nuevoNombre = `${nombreDia} ${diaStr} ${nombreMes} ${year}.${ext}`;
+                statusDiv.textContent = '⏳ Guardando...';
+                const buffer = await currentFile.arrayBuffer();
+                const base64 = arrayBufferToBase64(buffer);
+                if (window.Capacitor?.Plugins?.Filesystem) {
+                    try {
+                        const { Filesystem, Directory } = window.Capacitor.Plugins;
+                        await Filesystem.writeFile({ path: nuevoNombre, data: base64, directory: Directory.Documents, recursive: true });
+                        statusDiv.textContent = `✅ Guardado: "${nuevoNombre}"`;
+                    } catch (err) { statusDiv.textContent = '❌ Error: ' + err.message; }
+                } else {
+                    const blob = new Blob([buffer], { type: currentFile.type });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = nuevoNombre; a.click();
+                    URL.revokeObjectURL(url);
+                    statusDiv.textContent = `⬇️ Descargado: "${nuevoNombre}"`;
+                }
+            });
+            function arrayBufferToBase64(buffer) {
+                let binary = '';
+                const bytes = new Uint8Array(buffer);
+                for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+                return btoa(binary);
+            }
+        })();
+    </script>
+</body>
+</html>

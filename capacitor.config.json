@@ -1,0 +1,11 @@
+{
+  "appId": "com.tu.fotofecha",
+  "appName": "Fotofecha",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 0
+    }
+  }
+}

@@ -6,7 +6,7 @@
   "scripts": {
     "cap:sync": "npx cap sync",
     "cap:open": "npx cap open android",
-    "cap:assets": "npx capacitor-assets generate --iconBackgroundColor #121212 --iconBackgroundColorDark #121212"
+    "cap:assets": "npx capacitor-assets generate --iconBackgroundColor '#121212' --iconBackgroundColorDark '#121212'"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.0.0",

@@ -26,16 +26,8 @@ jobs:
       - name: Generate Capacitor assets (icons)
         run: npx capacitor-assets generate --iconBackgroundColor '#121212' --iconBackgroundColorDark '#121212'
         
-      - name: Copy web assets and sync plugins
+      - name: Sync Capacitor (web + plugins)
         run: npx cap sync android
-        
-      # Paso opcional para depurar qué plugins se incluyeron
-      - name: List Capacitor plugins in assets (debug)
-        run: |
-          echo "Contenido de android/app/src/main/assets/public:"
-          ls -la android/app/src/main/assets/public/
-          echo "Plugins Capacitor:"
-          ls -la android/app/src/main/assets/public/capacitor/plugins/ 2>/dev/null || echo "No se encontró carpeta de plugins"
         
       - name: Setup Java
         uses: actions/setup-java@v4
